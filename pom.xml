@@ -17,7 +17,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cloudera.sparkts</groupId>
   <artifactId>sparkts</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.4.0-tai-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Time Series for Spark</name>
   <description>A library for analyzing large-scale time series data.</description>
@@ -32,8 +32,8 @@
 
  <developers>
     <developer>
-      <name>Sandy Ryza</name>
-      <email>sandyryza@gmail.com</email>
+      <name>taisenki</name>
+      <email>taisenki@163.com</email>
     </developer>
   </developers>
 
@@ -42,20 +42,20 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:git:https://github.com/sryza/spark-timeseries.git</connection>
-    <url>scm:git:https://github.com/sryza/spark-timeseries.git</url>
-    <developerConnection>scm:git:https://github.com/sryza/spark-timeseries.git</developerConnection>
-    <tag>master</tag>
+    <connection>scm:git:https://github.com/taisenki/spark-timeseries.git</connection>
+    <url>scm:git:https://github.com/taisenki/spark-timeseries.git</url>
+    <developerConnection>scm:git:https://github.com/taisenki/spark-timeseries.git</developerConnection>
+    <tag>branch_spark1.6ver</tag>
   </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
-    <scala.minor.version>2.11</scala.minor.version>
-    <scala.complete.version>2.11.8</scala.complete.version>
-    <spark.version>2.0.0</spark.version>
-    <breeze.version>0.12</breeze.version>
+    <scala.minor.version>2.10</scala.minor.version>
+    <scala.complete.version>${scala.minor.version}.5</scala.complete.version>
+    <spark.version>1.6.0</spark.version>
+    <breeze.version>0.10</breeze.version>
   </properties>
 
   <distributionManagement>
@@ -474,14 +474,20 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.databricks/spark-csv_2.10 -->
+    <dependency>
+      <groupId>com.databricks</groupId>
+      <artifactId>spark-csv_2.10</artifactId>
+      <version>1.2.0</version>
+    </dependency>
   </dependencies>
 
   <profiles>
     <profile>
-      <id>scala-2.10</id>
+      <id>scala-2.11</id>
       <properties>
-        <scala.minor.version>2.10</scala.minor.version>
-        <scala.complete.version>2.10.6</scala.complete.version>
+        <scala.minor.version>2.11</scala.minor.version>
+        <scala.complete.version>${scala.minor.version}.6</scala.complete.version>
       </properties>
     </profile>
   </profiles>
