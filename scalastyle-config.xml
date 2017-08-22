@@ -21,7 +21,7 @@ var notAtAllAMagicNumber = 1234
       <parameter name="maxFileLength">800</parameter>
      </parameters>
     </check>
-    <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="true">
+    <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
      <parameters>
       <parameter name="header"><![CDATA[/**
  * Copyright (c) 2015, Cloudera, Inc. All Rights Reserved.
@@ -44,7 +44,7 @@ var notAtAllAMagicNumber = 1234
     <check level="warning" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="true"></check>
     <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
         <parameters>
-            <parameter name="maxLineLength">100</parameter>
+            <parameter name="maxLineLength">150</parameter>
             <parameter name="tabSize">2</parameter>
         </parameters>
     </check>

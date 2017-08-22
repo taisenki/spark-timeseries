@@ -1,3 +1,17 @@
+/**
+  * Copyright (c) 2015, Cloudera, Inc. All Rights Reserved.
+  *
+  * Cloudera, Inc. licenses this file to you under the Apache License,
+  * Version 2.0 (the "License"). You may not use this file except in
+  * compliance with the License. You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  * CONDITIONS OF ANY KIND, either express or implied. See the License for
+  * the specific language governing permissions and limitations under the
+  * License.
+  */
 package org.taisenki.sparkts
 
 import java.text.SimpleDateFormat
@@ -62,7 +76,7 @@ class TimeSeriesModel {
     }
     coefficients.collect().map{_ match{
       case (coefficients,(p,d,q))=>
-        println("coefficients:"+coefficients+"=>"+"(p="+p+",d="+d+",q="+q+")")
+        println("coefficients:" + coefficients + "=>" + "(p=" + p + ",d=" + d + ",q=" + q + ")")
     }}
 
     /***预测出后N个的值*****/
@@ -110,7 +124,7 @@ class TimeSeriesModel {
     var i=0
     while(i<predictedN){
       predictedArrayBuffer+=i
-      i=i+1
+      i=i + 1
     }
     val predictedVectors=Vectors.dense(predictedArrayBuffer.toArray)
 
@@ -192,15 +206,16 @@ class TimeSeriesModel {
     cal2.set(endTime.substring(0,4).toInt,endTime.substring(4).toInt,0)
 
     //开始日期和预测日期的月份差
-    val monthDiff = (cal2.getTime.getYear() - cal1.getTime.getYear()) * 12 +( cal2.getTime.getMonth() - cal1.getTime.getMonth())+predictedN
+    val monthDiff = (cal2.getTime.getYear() - cal1.getTime.getYear()) * 12
+                +( cal2.getTime.getMonth() - cal1.getTime.getMonth()) + predictedN
     var iMonth=0
     while(iMonth<=monthDiff){
       //日期加1个月
       cal1.add(Calendar.MONTH, iMonth)
       //保存日期
-      dateArrayBuffer+=dateFormat.format(cal1.getTime)
+      dateArrayBuffer += dateFormat.format(cal1.getTime)
       cal1.set(startTime.substring(0,4).toInt,startTime.substring(4).toInt,0)
-      iMonth=iMonth+1
+      iMonth = iMonth + 1
     }
     return dateArrayBuffer
   }
@@ -250,7 +265,9 @@ class TimeSeriesModel {
    * @param hiveColumnName  选择的列名字
    * @param sqlContext
    */
-  def actualForcastDateSaveInText(trainTsrdd:TimeSeriesRDD[String],forecastValue:RDD[String],modelName:String,predictedN:Int,startTime:String,endTime:String,sc:SparkContext,hiveColumnName:List[String],sqlContext:SQLContext): Unit ={
+  def actualForcastDateSaveInText(trainTsrdd:TimeSeriesRDD[String],forecastValue:RDD[String],
+       modelName:String,predictedN:Int,startTime:String,endTime:String,sc:SparkContext,
+       hiveColumnName:List[String],sqlContext:SQLContext): Unit ={
 
     //在真实值后面追加预测值
     val actualAndForcastArray=trainTsrdd.map{line=>
@@ -259,7 +276,8 @@ class TimeSeriesModel {
           denseVector.toArray.mkString(",")
       }
     }.union(forecastValue).collect()
-    val actualAndForcastSting=(actualAndForcastArray(0).toString+","+actualAndForcastArray(1).toString).split(",").map(data=>(data))
+    val actualAndForcastSting=(actualAndForcastArray(0).toString + "," + actualAndForcastArray(1).toString)
+      .split(",").map(data=>(data))
     val actualAndForcastRdd=sc.parallelize(actualAndForcastSting)
 
     //获取日期，并转换成rdd

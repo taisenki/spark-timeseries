@@ -1,3 +1,18 @@
+/**
+  * Copyright (c) 2015, Cloudera, Inc. All Rights Reserved.
+  *
+  * Cloudera, Inc. licenses this file to you under the Apache License,
+  * Version 2.0 (the "License"). You may not use this file except in
+  * compliance with the License. You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+  * CONDITIONS OF ANY KIND, either express or implied. See the License for
+  * the specific language governing permissions and limitations under the
+  * License.
+  */
+
 package org.taisenki.sparkts
 
 import java.sql.Timestamp
@@ -23,14 +38,16 @@ object TimeSeriesTrain {
    * @param hiveColumnName
    * @return zonedDateDataDf
    */
-  def timeChangeToDate(timeDataKeyDf:DataFrame,sqlContext: SQLContext,hiveColumnName:List[String],startTime:String,sc:SparkContext): DataFrame ={
+  def timeChangeToDate(timeDataKeyDf:DataFrame,sqlContext: SQLContext,
+                       hiveColumnName:List[String],startTime:String,sc:SparkContext): DataFrame ={
     var rowRDD:RDD[Row]=sc.parallelize(Seq(Row(""),Row("")))
     //具体到月份
     if(startTime.length==6){
       rowRDD=timeDataKeyDf.rdd.map{row=>
         row match{
           case Row(time,key,data)=>{
-            val dt = ZonedDateTime.of(time.toString.substring(0,4).toInt,time.toString.substring(4).toInt,1,0,0,0,0,ZoneId.systemDefault())
+            val dt = ZonedDateTime.of(time.toString.substring(0,4).toInt,
+              time.toString.substring(4).toInt,1,0,0,0,0,ZoneId.systemDefault())
             Row(Timestamp.from(dt.toInstant), key.toString, data.toString.toDouble)
           }
         }
@@ -40,7 +57,9 @@ object TimeSeriesTrain {
       rowRDD=timeDataKeyDf.rdd.map{row=>
         row match{
           case Row(time,key,data)=>{
-            val dt = ZonedDateTime.of(time.toString.substring(0,4).toInt,time.toString.substring(4,6).toInt,time.toString.substring(6).toInt,0,0,0,0,ZoneId.systemDefault())
+            val dt = ZonedDateTime.of(time.toString.substring(0,4).toInt,
+              time.toString.substring(4,6).toInt,
+              time.toString.substring(6).toInt,0,0,0,0,ZoneId.systemDefault())
             Row(Timestamp.from(dt.toInstant), key.toString, data.toString.toDouble)
           }
         }
@@ -62,7 +81,7 @@ object TimeSeriesTrain {
    * 总方法调用
    * @param args
    */
-  def main(args: Array[String]) {
+  def main(args: Array[String]):Unit = {
     /*****环境设置*****/
     //shield the unnecessary log in terminal
     Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
@@ -91,7 +110,7 @@ object TimeSeriesTrain {
 
     //只有holtWinters才有的参数
     //季节性参数（12或者4）
-    val period=5
+    val period=6
     //holtWinters选择模型：additive（加法模型）、Multiplicative（乘法模型）
     val holtWintersModelType="Multiplicative"
 
@@ -99,10 +118,11 @@ object TimeSeriesTrain {
     //    //read the data form the hive
     //    val hiveDataDf=hiveContext.sql("select * from "+databaseTableName)
     //      .select(hiveColumnName.head,hiveColumnName.tail:_*)
-//    val hiveDataDf=sqlContext.load("com.databricks.spark.csv",Map("path" -> "src/test/resources/201601-201706.csv", "header" -> "true"))
+//    val hiveDataDf=sqlContext.load("com.databricks.spark.csv",
+    // Map("path" -> "src/test/resources/201601-201706.csv", "header" -> "true"))
       /*.select(hiveColumnName.head,hiveColumnName.tail:_*)*/
 
-    val dataFile = getClass.getClassLoader.getResourceAsStream("201601-201706.csv")
+    val dataFile = getClass.getClassLoader.getResourceAsStream("201601-201706-dd.csv")
     val rawData = scala.io.Source.fromInputStream(dataFile).getLines().toArray
     val head = rawData.apply(0).split(",").drop(1).map(_.trim)
     val rawData2 = rawData.drop(1).flatMap(s=>{

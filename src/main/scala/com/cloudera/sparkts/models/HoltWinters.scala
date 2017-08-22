@@ -59,6 +59,7 @@ object HoltWinters {
   : HoltWintersModel = {
     method match {
       case "BOBYQA" => fitModelWithBOBYQA(ts, period, modelType)
+      case "LFBG" => _
       case _ => throw new UnsupportedOperationException("Currently only supports 'BOBYQA'")
     }
   }
