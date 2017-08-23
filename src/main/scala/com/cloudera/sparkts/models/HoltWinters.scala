@@ -15,8 +15,10 @@
 
 package com.cloudera.sparkts.models
 
-import org.apache.commons.math3.analysis.MultivariateFunction
+import breeze.linalg.{DenseVector => DV}
+import breeze.optimize.{ApproximateGradientFunction, LBFGS}
 import org.apache.spark.mllib.linalg._
+import org.apache.commons.math3.analysis.MultivariateFunction
 import org.apache.commons.math3.optim.MaxIter
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction
 import org.apache.commons.math3.optim.MaxEval
@@ -53,15 +55,27 @@ object HoltWinters {
    *  	Additive method is preferred when seasonal variations are roughly constant through the series,
    *  	Multiplicative method is preferred when the seasonal variations are changing
    *  	proportional to the level of the series.
-   * @param method: Currently only BOBYQA is supported.
+   * @param method: Currently BOBYQA、LBFGS is supported.
    */
   def fitModel(ts: Vector, period: Int, modelType: String = "additive", method: String = "BOBYQA")
   : HoltWintersModel = {
     method match {
       case "BOBYQA" => fitModelWithBOBYQA(ts, period, modelType)
-      case "LFBG" => _
-      case _ => throw new UnsupportedOperationException("Currently only supports 'BOBYQA'")
+      case "LBFGS" => fitModelWithLBFGS(ts, period, modelType)
+      case _ => throw new UnsupportedOperationException("Currently only supports 'BOBYQA'、'LBFGS'")
     }
+  }
+
+  def fitModelWithLBFGS(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
+    val optimizer = new LBFGS[DV[Double]](tolerance = 1.0E-5)
+    val valueFunction = new ApproximateGradientFunction[Double, DV[Double]](
+      (params: DV[Double]) => {
+        new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
+      }
+    )
+    val initial = DV(0.3, 0.1, 0.1)
+    val params = optimizer.minimize(valueFunction, initial)
+    new HoltWintersModel(modelType, period, params(0), params(1), params(2))
   }
 
   def fitModelWithBOBYQA(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
