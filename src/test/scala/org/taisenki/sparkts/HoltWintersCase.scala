@@ -10,10 +10,10 @@ object HoltWintersCase {
 
     val data = Vectors.dense(dataStr.split(",").map(_.toDouble))
 
-    val modeltype = "additive"
-    val methods = "LBFGS"
+    val modeltype = "additive" //additive \ multiplicative
+    val methods = "LBFGS" //BOBYQA\POWELL\LBFGS
     val model = HoltWinters.fitModel(data, 24, modeltype, methods)
-    val predictedVectors=Vectors.dense((0 to 24).map(_.toDouble).toArray)
+    val predictedVectors=Vectors.dense((0 to 48).map(_.toDouble).toArray)
 
     model.forecast(data, predictedVectors)
 

@@ -23,7 +23,7 @@ import org.apache.commons.math3.optim.MaxIter
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction
 import org.apache.commons.math3.optim.MaxEval
 import org.apache.commons.math3.optim.SimpleBounds
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{BOBYQAOptimizer, PowellOptimizer}
 import org.apache.commons.math3.optim.InitialGuess
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
 
@@ -62,19 +62,46 @@ object HoltWinters {
     method match {
       case "BOBYQA" => fitModelWithBOBYQA(ts, period, modelType)
       case "LBFGS" => fitModelWithLBFGS(ts, period, modelType)
+      case "POWELL" => fitModelWithPowell(ts, period, modelType)
       case _ => throw new UnsupportedOperationException("Currently only supports 'BOBYQA'、'LBFGS'")
     }
   }
 
+  /**
+    * L-BFGS-B used in the R
+    * @param ts
+    * @param period
+    * @param modelType
+    * @return
+    */
   def fitModelWithLBFGS(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new LBFGS[DV[Double]](tolerance = 1.0E-5)
-    val valueFunction = new ApproximateGradientFunction[Double, DV[Double]](
+    val optimizer = new LBFGS[DV[Double]](tolerance = 1.0E-9)
+    val valueFunction = new ApproximateGradientFunction[Int, DV[Double]](
       (params: DV[Double]) => {
         new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
       }
     )
     val initial = DV(0.3, 0.1, 0.1)
     val params = optimizer.minimize(valueFunction, initial)
+    new HoltWintersModel(modelType, period, params(0), params(1), params(2))
+  }
+
+  def fitModelWithPowell(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
+    val optimizer = new PowellOptimizer(1.0E-5, 1.0E-4)
+    val objectiveFunction = new ObjectiveFunction(new MultivariateFunction() {
+      def value(params: Array[Double]): Double = {
+        new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
+      }
+    })
+
+    // The starting guesses in R's stats:HoltWinters
+    val initGuess = new InitialGuess(Array(0.3, 0.1, 0.1))
+    val maxIter = new MaxIter(30000)
+    val maxEval = new MaxEval(30000)
+    val goal = GoalType.MINIMIZE
+//    val bounds = new SimpleBounds(Array(0.0, 0.0, 0.0), Array(1.0, 1.0, 1.0))
+    val optimal = optimizer.optimize(objectiveFunction, goal, initGuess, maxIter, maxEval)
+    val params = optimal.getPoint
     new HoltWintersModel(modelType, period, params(0), params(1), params(2))
   }
 
@@ -131,6 +158,24 @@ class HoltWintersModel(
     }
 
     sqrErrors
+  }
+
+  /**
+    * Calculates Root Mean Square Error, used to estimate the alpha and beta parameters
+    *
+    * @param ts A time series for which we want to calculate the RMSE, given the current parameters
+    * @return RMSE
+    */
+  def rmse(ts: Vector): Double = {
+    val n = ts.size
+    val smoothed = new DenseVector(Array.fill(n)(0.0))
+    addTimeDependentEffects(ts, smoothed)
+
+    // We predict only from period by using the first period - 1 elements.
+    val temp: Array[Double] = ts.toArray.zip(smoothed.toArray).slice(period, (n - 1))
+      .map { case (actual, predicted) => math.pow(actual - predicted, 2)}
+
+    math.sqrt((temp.sum / temp.size))
   }
 
   /**
