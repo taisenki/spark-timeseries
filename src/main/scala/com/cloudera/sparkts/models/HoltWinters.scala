@@ -17,6 +17,7 @@ package com.cloudera.sparkts.models
 
 import breeze.linalg.{DenseVector => DV}
 import breeze.optimize.{ApproximateGradientFunction, LBFGS}
+import com.cloudera.sparkts.api.java.BOBYQAOptimizer2
 import org.apache.spark.mllib.linalg._
 import org.apache.commons.math3.analysis.MultivariateFunction
 import org.apache.commons.math3.optim.MaxIter
@@ -26,6 +27,8 @@ import org.apache.commons.math3.optim.SimpleBounds
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{BOBYQAOptimizer, PowellOptimizer}
 import org.apache.commons.math3.optim.InitialGuess
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
+
+import scala.concurrent.duration.TimeUnit
 
 /**
  * Triple exponential smoothing takes into account seasonal changes as well as trends.
@@ -105,8 +108,26 @@ object HoltWinters {
     new HoltWintersModel(modelType, period, params(0), params(1), params(2))
   }
 
+  case class TimeoutMultiFunction(ts:Vector, period: Int, modelType:String, timeout:Long, unit: TimeUnit) extends MultivariateFunction{
+    private var startTime = System.currentTimeMillis()
+    def value(params: Array[Double]): Double = {
+      if(startTime == 0){
+        startTime = System.currentTimeMillis()
+      } else {
+        isTimeout()
+      }
+      new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
+    }
+    def isTimeout(): Unit ={
+      val now = System.currentTimeMillis()
+      if(now-startTime>unit.toMillis(timeout)){
+        throw new RuntimeException("运行超时，请检查！")
+      }
+    }
+  }
+
   def fitModelWithBOBYQA(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new BOBYQAOptimizer(7)
+    val optimizer = new BOBYQAOptimizer2(7)
     val objectiveFunction = new ObjectiveFunction(new MultivariateFunction() {
       def value(params: Array[Double]): Double = {
         new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
