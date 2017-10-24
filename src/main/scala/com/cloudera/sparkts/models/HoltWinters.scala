@@ -90,7 +90,7 @@ object HoltWinters {
   }
 
   def fitModelWithPowell(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new PowellOptimizer(1.0E-5, 1.0E-4)
+    val optimizer = new PowellOptimizer(1.0E-8, 1.0E-7)
     val objectiveFunction = new ObjectiveFunction(new MultivariateFunction() {
       def value(params: Array[Double]): Double = {
         new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
