@@ -18,15 +18,12 @@ package com.cloudera.sparkts.models
 import breeze.linalg.{DenseVector => DV}
 import breeze.optimize.{ApproximateGradientFunction, LBFGS}
 import com.cloudera.sparkts.api.java.BOBYQAOptimizer2
-import org.apache.spark.mllib.linalg._
+import com.cloudera.sparkts.optimize.LBFGSB
 import org.apache.commons.math3.analysis.MultivariateFunction
-import org.apache.commons.math3.optim.MaxIter
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction
-import org.apache.commons.math3.optim.MaxEval
-import org.apache.commons.math3.optim.SimpleBounds
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.{BOBYQAOptimizer, PowellOptimizer}
-import org.apache.commons.math3.optim.InitialGuess
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType
+import org.apache.commons.math3.optim.{InitialGuess, MaxEval, MaxIter, SimpleBounds}
+import org.apache.commons.math3.optim.nonlinear.scalar.{GoalType, ObjectiveFunction}
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.PowellOptimizer
+import org.apache.spark.mllib.linalg._
 
 import scala.concurrent.duration.TimeUnit
 
@@ -65,9 +62,29 @@ object HoltWinters {
     method match {
       case "BOBYQA" => fitModelWithBOBYQA(ts, period, modelType)
       case "LBFGS" => fitModelWithLBFGS(ts, period, modelType)
+      case "LBFGSB" => fitModelWithLBFGSB(ts, period, modelType)
       case "POWELL" => fitModelWithPowell(ts, period, modelType)
       case _ => throw new UnsupportedOperationException("Currently only supports 'BOBYQA'、'LBFGS'")
     }
+  }
+
+  /**
+    * L-BFGS
+    * @param ts
+    * @param period
+    * @param modelType
+    * @return
+    */
+  def fitModelWithLBFGS(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
+    val optimizer = new LBFGS[DV[Double]](tolerance = 1.0E-9)
+    val valueFunction = new ApproximateGradientFunction[Int, DV[Double]](
+      (params: DV[Double]) => {
+        new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
+      }
+    )
+    val initial = DV(0.3, 0.1, 0.1)
+    val params = optimizer.minimize(valueFunction, initial)
+    new HoltWintersModel(modelType, period, params(0), params(1), params(2))
   }
 
   /**
@@ -77,8 +94,8 @@ object HoltWinters {
     * @param modelType
     * @return
     */
-  def fitModelWithLBFGS(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new LBFGS[DV[Double]](tolerance = 1.0E-9)
+  def fitModelWithLBFGSB(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
+    val optimizer = new LBFGSB(lowerBounds = DV(0.0, 0.0, 0.0), upperBounds = DV(1.0, 1.0, 1.0), tolerance = 1.0E-9)
     val valueFunction = new ApproximateGradientFunction[Int, DV[Double]](
       (params: DV[Double]) => {
         new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
