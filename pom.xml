@@ -17,7 +17,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cloudera.sparkts</groupId>
   <artifactId>sparkts</artifactId>
-  <version>0.4.1-tai</version>
+  <version>0.4.1-tai-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Time Series for Spark</name>
   <description>A library for analyzing large-scale time series data.</description>
@@ -70,7 +70,7 @@
     <site>
       <id>sparkts.website</id>
       <name>Spark TS documentation</name>
-      <url>http://cloudera.github.io/spark-timeseries/</url>
+      <url>https://github.com/taisenki/spark-timeseries/</url>
     </site>
   </distributionManagement>
   
@@ -336,6 +336,9 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+                <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
           </execution>
         </executions>
       </plugin>
