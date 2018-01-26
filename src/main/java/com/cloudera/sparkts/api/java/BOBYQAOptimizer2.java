@@ -58,7 +58,7 @@ public class BOBYQAOptimizer2
     /** Default value for {@link #stoppingTrustRegionRadius}: {@value} . */
     public static final double DEFAULT_STOPPING_RADIUS = 1E-8;
     /** Default value for {@link #maxIter}: {@value} . */
-    public static final long DEFAULT_MAX_ITER = 100000;
+    public static final long DEFAULT_MAX_ITER = 10000000;
     /** Constant 0. */
     private static final double ZERO = 0d;
     /** Constant 1. */
@@ -562,6 +562,8 @@ public class BOBYQAOptimizer2
                                 // throw new PathIsExploredException(); // XXX
                             }
                         }
+                        // state 650 change in for-loop should be check
+						if (state == 650) break;
                         state = 680; break;
                     }
                     ++ntrits;
@@ -2141,6 +2143,8 @@ public class BOBYQAOptimizer2
                             }
                         }
                     }
+					// state 100 change in for-loop should be check
+                    if (state == 100) break;
 
                     // Calculate HHD and some curvatures for the alternative iteration.
 

@@ -32,13 +32,13 @@ import scala.reflect.ClassTag
   * it should increase the two variables to appropriate value
   */
 class LBFGSB(
-              lowerBounds: DenseVector[Double],
-              upperBounds: DenseVector[Double],
-              maxIter: Int = 100,
-              m: Int = 5,
-              tolerance: Double = 1E-8,
-              maxZoomIter: Int = 64,
-              maxLineSearchIter: Int = 64)
+    lowerBounds: DenseVector[Double],
+    upperBounds: DenseVector[Double],
+    maxIter: Int = 100,
+    m: Int = 5,
+    tolerance: Double = 1E-8,
+    maxZoomIter: Int = 64,
+    maxLineSearchIter: Int = 64)
   extends FirstOrderMinimizerCustom[DenseVector[Double], DiffFunction[DenseVector[Double]]](
     LBFGSB.defaultConvergenceCheck(lowerBounds, upperBounds, tolerance, maxIter))
     with SerializableLogging {
@@ -65,11 +65,11 @@ class LBFGSB(
   }
 
   override protected def updateHistory(
-                                        newX: DenseVector[Double],
-                                        newGrad: DenseVector[Double],
-                                        newVal: Double,
-                                        f: DiffFunction[DenseVector[Double]],
-                                        oldState: State): History = {
+      newX: DenseVector[Double],
+      newGrad: DenseVector[Double],
+      newVal: Double,
+      f: DiffFunction[DenseVector[Double]],
+      oldState: State): History = {
     updateSkYkHessianApproxMat(oldState.history, newX - oldState.x, newGrad :- oldState.grad)
   }
 
@@ -96,9 +96,9 @@ class LBFGSB(
   }
 
   override protected def determineStepSize(
-                                            state: State,
-                                            f: DiffFunction[DenseVector[Double]],
-                                            direction: DenseVector[Double]): Double = {
+      state: State,
+      f: DiffFunction[DenseVector[Double]],
+      direction: DenseVector[Double]): Double = {
     val ff = new DiffFunction[Double] {
       def calculate(alpha: Double) = {
         val newX = takeStep(state, direction, alpha)
@@ -211,7 +211,7 @@ class LBFGSB(
         .dot(M * p))) - g(b) * g(b) * (bRowOfW.t * (M * bRowOfW))
       p += (bRowOfW :* g(b));
       d(b) = 0.0
-      dtMin = -fDerivative / fSecondDerivative
+      dtMin = if (fSecondDerivative != 0) -fDerivative / fSecondDerivative else Double.PositiveInfinity
       oldT = minT
       i += 1
       if (i < n) {
@@ -255,11 +255,11 @@ class LBFGSB(
 
   //use Direct Primal Method
   protected def subspaceMinimization(
-                                      history: History,
-                                      xCauchy: DenseVector[Double],
-                                      x: DenseVector[Double],
-                                      c: DenseVector[Double],
-                                      g: DenseVector[Double]) = {
+      history: History,
+      xCauchy: DenseVector[Double],
+      x: DenseVector[Double],
+      c: DenseVector[Double],
+      g: DenseVector[Double]) = {
     import history._
     val invTheta = 1.0 / theta
 
@@ -369,24 +369,24 @@ class LBFGSB(
 object LBFGSB {
 
   def defaultConvergenceCheck(
-                               lowerBounds: DenseVector[Double],
-                               upperBounds: DenseVector[Double],
-                               tolerance: Double,
-                               maxIter: Int) = {
+      lowerBounds: DenseVector[Double],
+      upperBounds: DenseVector[Double],
+      tolerance: Double,
+      maxIter: Int) = {
     bfgsbConvergenceTest(lowerBounds, upperBounds) || FirstOrderMinimizerCustom.defaultConvergenceCheck(maxIter, tolerance)
   }
 
   protected val PROJ_GRADIENT_EPS = 1E-5
   protected def bfgsbConvergenceTest(
-                                      lowerBounds: DenseVector[Double],
-                                      upperBounds: DenseVector[Double]): ConvergenceCheck[DenseVector[Double]] = ConvergenceCheck.fromPartialFunction {
+      lowerBounds: DenseVector[Double],
+      upperBounds: DenseVector[Double]): ConvergenceCheck[DenseVector[Double]] = ConvergenceCheck.fromPartialFunction {
     case state if boundedConvCheck(state, lowerBounds, upperBounds) => ProjectedStepConverged
   }
 
   private def boundedConvCheck[H](
-                                   state: State[DenseVector[Double], _, H],
-                                   lowerBounds: DenseVector[Double],
-                                   upperBounds: DenseVector[Double]): Boolean = {
+      state: State[DenseVector[Double], _, H],
+      lowerBounds: DenseVector[Double],
+      upperBounds: DenseVector[Double]): Boolean = {
     val x = state.x
     val g = state.grad
     val pMinusX = (x - g).mapPairs { (i, v) =>

@@ -140,17 +140,17 @@ object FirstOrderMinimizerCustom {
     * @param convergenceReason the convergence reason
     */
   case class State[+T, +ConvergenceInfo, +History](
-                                                    x: T,
-                                                    value: Double,
-                                                    grad: T,
-                                                    adjustedValue: Double,
-                                                    adjustedGradient: T,
-                                                    iter: Int,
-                                                    initialAdjVal: Double,
-                                                    history: History,
-                                                    convergenceInfo: ConvergenceInfo,
-                                                    searchFailed: Boolean = false,
-                                                    var convergenceReason: Option[ConvergenceReason] = None) {}
+      x: T,
+      value: Double,
+      grad: T,
+      adjustedValue: Double,
+      adjustedGradient: T,
+      iter: Int,
+      initialAdjVal: Double,
+      history: History,
+      convergenceInfo: ConvergenceInfo,
+      searchFailed: Boolean = false,
+      var convergenceReason: Option[ConvergenceReason] = None) {}
 
   trait ConvergenceCheck[T] {
     type Info
@@ -224,9 +224,9 @@ object FirstOrderMinimizerCustom {
   }
 
   def functionValuesConverged[T](
-                                  tolerance: Double = 1E-9,
-                                  relative: Boolean = true,
-                                  historyLength: Int = 10): ConvergenceCheck[T] = {
+      tolerance: Double = 1E-9,
+      relative: Boolean = true,
+      historyLength: Int = 10): ConvergenceCheck[T] = {
     new FunctionValuesConverged[T](tolerance, relative, historyLength)
   }
 
@@ -274,18 +274,18 @@ object FirstOrderMinimizerCustom {
     * @tparam T
     */
   def monitorFunctionValues[T](
-                                f: T => Double,
-                                numFailures: Int = 5,
-                                improvementRequirement: Double = 1E-2,
-                                evalFrequency: Int = 10): ConvergenceCheck[T] =
+      f: T => Double,
+      numFailures: Int = 5,
+      improvementRequirement: Double = 1E-2,
+      evalFrequency: Int = 10): ConvergenceCheck[T] =
     new MonitorFunctionValuesCheck(f, numFailures, improvementRequirement, evalFrequency)
 
   case class MonitorFunctionValuesCheck[T](
-                                            f: T => Double,
-                                            numFailures: Int,
-                                            improvementRequirement: Double,
-                                            evalFrequency: Int)
-    extends ConvergenceCheck[T]
+      f: T => Double,
+      numFailures: Int,
+      improvementRequirement: Double,
+      evalFrequency: Int)
+      extends ConvergenceCheck[T]
       with SerializableLogging {
     case class Info(bestValue: Double, numFailures: Int)
 
