@@ -229,4 +229,5 @@ class HoltWintersModelSuite extends FunSuite {
     for (i <- 0 until period) {
       forecasted(i) should be (actualForecasted(i) +- 0.01)
     }
-  }}
+  }
+}
