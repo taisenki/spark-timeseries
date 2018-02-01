@@ -37,7 +37,7 @@ object HoltWintersCase {
 
 
     try{
-      val methods = "BOBYQA1" //BOBYQA\POWELL\LBFGS\LBFGSB
+      val methods = "LBFGSB" //BOBYQA\POWELL\LBFGS\LBFGSB
       println(methods)
       val model2 = HoltWinters.fitModel(data, 24, modeltype, methods)
       model2.forecast(data, predictedVectors)

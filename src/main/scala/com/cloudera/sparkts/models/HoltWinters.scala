@@ -17,7 +17,7 @@ package com.cloudera.sparkts.models
 
 import breeze.linalg.{DenseVector => DV}
 import breeze.optimize.{ApproximateGradientFunction, LBFGS}
-import com.cloudera.sparkts.api.java.{BOBYQAOptimizer => BOC, BOBYQAOptimizerCustom => BOC2}
+import com.cloudera.sparkts.api.java.BOBYQAOptimizerCustom
 import com.cloudera.sparkts.optimize.LBFGSB
 import org.apache.commons.math3.analysis.MultivariateFunction
 import org.apache.commons.math3.optim.{InitialGuess, MaxEval, MaxIter, SimpleBounds}
@@ -61,7 +61,6 @@ object HoltWinters {
   : HoltWintersModel = {
     method match {
       case "BOBYQA" => fitModelWithBOBYQA(ts, period, modelType)
-      case "BOBYQA1" => fitModelWithBOBYQA1(ts, period, modelType)
       case "LBFGS" => fitModelWithLBFGS(ts, period, modelType)
       case "LBFGSB" => fitModelWithLBFGSB(ts, period, modelType)
       case "POWELL" => fitModelWithPowell(ts, period, modelType)
@@ -145,26 +144,7 @@ object HoltWinters {
   }
 
   def fitModelWithBOBYQA(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new BOC2(7)
-    val objectiveFunction = new ObjectiveFunction(new MultivariateFunction() {
-      def value(params: Array[Double]): Double = {
-        new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
-      }
-    })
-
-    // The starting guesses in R's stats:HoltWinters
-    val initGuess = new InitialGuess(Array(0.3, 0.1, 0.1))
-    val maxIter = new MaxIter(30000)
-    val maxEval = new MaxEval(30000)
-    val goal = GoalType.MINIMIZE
-    val bounds = new SimpleBounds(Array(0.0, 0.0, 0.0), Array(1.0, 1.0, 1.0))
-    val optimal = optimizer.optimize(objectiveFunction, goal, bounds,initGuess, maxIter, maxEval)
-    val params = optimal.getPoint
-    new HoltWintersModel(modelType, period, params(0), params(1), params(2))
-  }
-
-  def fitModelWithBOBYQA1(ts: Vector, period: Int, modelType:String): HoltWintersModel = {
-    val optimizer = new BOC(7)
+    val optimizer = new BOBYQAOptimizerCustom(7)
     val objectiveFunction = new ObjectiveFunction(new MultivariateFunction() {
       def value(params: Array[Double]): Double = {
         new HoltWintersModel(modelType, period, params(0), params(1), params(2)).sse(ts)
