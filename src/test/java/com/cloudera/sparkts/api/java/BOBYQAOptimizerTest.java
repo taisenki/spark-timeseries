@@ -16,18 +16,23 @@
  */
 package com.cloudera.sparkts.api.java;
 
-import static org.junit.Assert.fail;
-
 import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.*;
-import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NumberIsTooLargeException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.util.FastMath;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -37,67 +42,64 @@ public class BOBYQAOptimizerTest {
 
     static final int DIM = 13;
 
-    @Test(expected = NumberIsTooLargeException.class)
-    public void testInitOutofbounds() {
-        double[] startPoint = point(DIM,3);
-        double[][] boundaries = boundaries(DIM,-1,2);
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,1.0),0.0);
+    @Test(expected=NumberIsTooLargeException.class)
+    public void testInitOutOfBounds() {
+        double[] startPoint = point(DIM, 3);
+        double[][] boundaries = boundaries(DIM, -1, 2);
         doTest(new Rosen(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
-                1e-13, 1e-6, 2000, expected);
+                GoalType.MINIMIZE,
+                1e-13, 1e-6, 2000, null);
     }
-    
-    @Test(expected = DimensionMismatchException.class)
+
+    @Test(expected=DimensionMismatchException.class)
     public void testBoundariesDimensionMismatch() {
-        double[] startPoint = point(DIM,0.5);
-        double[][] boundaries = boundaries(DIM+1,-1,2);
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,1.0),0.0);
+        double[] startPoint = point(DIM, 0.5);
+        double[][] boundaries = boundaries(DIM + 1, -1, 2);
         doTest(new Rosen(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
-                1e-13, 1e-6, 2000, expected);
+               GoalType.MINIMIZE,
+               1e-13, 1e-6, 2000, null);
     }
+
+    @Test(expected=NumberIsTooSmallException.class)
+    public void testProblemDimensionTooSmall() {
+        double[] startPoint = point(1, 0.5);
+        doTest(new Rosen(), startPoint, null,
+               GoalType.MINIMIZE,
+               1e-13, 1e-6, 2000, null);
+    }
+
+    @Test(expected=TooManyEvaluationsException.class)
+    public void testMaxEvaluations() {
+        final int lowMaxEval = 2;
+        double[] startPoint = point(DIM, 0.1);
+        double[][] boundaries = null;
+        doTest(new Rosen(), startPoint, boundaries,
+               GoalType.MINIMIZE,
+               1e-13, 1e-6, lowMaxEval, null);
+     }
 
     @Test
     public void testRosen() {
         double[] startPoint = point(DIM,0.1);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,1.0),0.0);
+        PointValuePair expected = new PointValuePair(point(DIM,1.0),0.0);
         doTest(new Rosen(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 2000, expected);
      }
-    
-    @Test
-    public void testRescue() {
-        double[] startPoint = point(DIM,1.0);
-        double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0);
-        try {
-            doTest(new MinusElli(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
-                1e-13, 1e-6, 1000, expected);
-            fail("An TooManyEvaluationsException should have been thrown");
-        } catch(TooManyEvaluationsException e) {
-        }
-    }
 
     @Test
     public void testMaximize() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),1.0);
+        PointValuePair expected = new PointValuePair(point(DIM,0.0),1.0);
         doTest(new MinusElli(), startPoint, boundaries,
-                GoalType.MAXIMIZE, 
+                GoalType.MAXIMIZE,
                 2e-10, 5e-6, 1000, expected);
-        boundaries = boundaries(DIM,-0.3,0.3); 
+        boundaries = boundaries(DIM,-0.3,0.3);
         startPoint = point(DIM,0.1);
         doTest(new MinusElli(), startPoint, boundaries,
-                GoalType.MAXIMIZE, 
+                GoalType.MAXIMIZE,
                 2e-10, 5e-6, 1000, expected);
     }
 
@@ -105,10 +107,10 @@ public class BOBYQAOptimizerTest {
     public void testEllipse() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Elli(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 1000, expected);
      }
 
@@ -116,10 +118,10 @@ public class BOBYQAOptimizerTest {
     public void testElliRotated() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new ElliRotated(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-12, 1e-6, 10000, expected);
     }
 
@@ -127,10 +129,10 @@ public class BOBYQAOptimizerTest {
     public void testCigar() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Cigar(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 100, expected);
     }
 
@@ -138,8 +140,8 @@ public class BOBYQAOptimizerTest {
     public void testTwoAxes() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new TwoAxes(), startPoint, boundaries,
                 GoalType.MINIMIZE, 2*
                 1e-13, 1e-6, 100, expected);
@@ -149,10 +151,10 @@ public class BOBYQAOptimizerTest {
     public void testCigTab() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new CigTab(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 5e-5, 100, expected);
      }
 
@@ -160,21 +162,21 @@ public class BOBYQAOptimizerTest {
     public void testSphere() {
         double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Sphere(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 100, expected);
     }
 
     @Test
     public void testTablet() {
-        double[] startPoint = point(DIM,1.0); 
+        double[] startPoint = point(DIM,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Tablet(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 100, expected);
     }
 
@@ -182,33 +184,33 @@ public class BOBYQAOptimizerTest {
     public void testDiffPow() {
         double[] startPoint = point(DIM/2,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM/2,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM/2,0.0),0.0);
         doTest(new DiffPow(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
-                1e-8, 1e-1, 120000, expected);
+                GoalType.MINIMIZE,
+                1e-8, 1e-1, 21000, expected);
     }
 
     @Test
     public void testSsDiffPow() {
         double[] startPoint = point(DIM/2,1.0);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM/2,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM/2,0.0),0.0);
         doTest(new SsDiffPow(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-2, 1.3e-1, 50000, expected);
     }
 
     @Test
     public void testAckley() {
-        double[] startPoint = point(DIM,0.01);
+        double[] startPoint = point(DIM,0.1);
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Ackley(), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-8, 1e-5, 1000, expected);
+                1e-7, 1e-5, 1000, expected);
     }
 
     @Test
@@ -216,10 +218,10 @@ public class BOBYQAOptimizerTest {
         double[] startPoint = point(DIM,1.0);
 
         double[][] boundaries = null;
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,0.0),0.0);
+        PointValuePair expected =
+            new PointValuePair(point(DIM,0.0),0.0);
         doTest(new Rastrigin(), startPoint, boundaries,
-                GoalType.MINIMIZE, 
+                GoalType.MINIMIZE,
                 1e-13, 1e-6, 1000, expected);
     }
 
@@ -228,12 +230,37 @@ public class BOBYQAOptimizerTest {
         double[] startPoint = point(DIM,0.1);
 
         double[][] boundaries = boundaries(DIM,-1,2);
-        RealPointValuePair expected =
-            new RealPointValuePair(point(DIM,1.0),0.0);
-//        for (int i=0; i<100; i++)
+        PointValuePair expected =
+            new PointValuePair(point(DIM,1.0),0.0);
         doTest(new Rosen(), startPoint, boundaries,
                 GoalType.MINIMIZE,
                 1e-13, 1e-6, 2000, expected);
+    }
+
+    // See MATH-728
+    // TODO: this test is temporarily disabled for 3.2 release as a bug in Cobertura
+    //       makes it run for several hours before completing
+    @Ignore @Test
+    public void testConstrainedRosenWithMoreInterpolationPoints() {
+        final double[] startPoint = point(DIM, 0.1);
+        final double[][] boundaries = boundaries(DIM, -1, 2);
+        final PointValuePair expected = new PointValuePair(point(DIM, 1.0), 0.0);
+
+        // This should have been 78 because in the code the hard limit is
+        // said to be
+        //   ((DIM + 1) * (DIM + 2)) / 2 - (2 * DIM + 1)
+        // i.e. 78 in this case, but the test fails for 48, 59, 62, 63, 64,
+        // 65, 66, ...
+        final int maxAdditionalPoints = 47;
+
+        for (int num = 1; num <= maxAdditionalPoints; num++) {
+            doTest(new Rosen(), startPoint, boundaries,
+                   GoalType.MINIMIZE,
+                   1e-12, 1e-6, 2000,
+                   num,
+                   expected,
+                   "num=" + num);
+        }
     }
 
     /**
@@ -247,41 +274,76 @@ public class BOBYQAOptimizerTest {
      * @param expected Expected point / value.
      */
     private void doTest(MultivariateFunction func,
-            double[] startPoint,
-            double[][] boundaries,
-            GoalType goal,
-            double fTol,
-            double pointTol,
-            int maxEvaluations,
-            RealPointValuePair expected) {
+                        double[] startPoint,
+                        double[][] boundaries,
+                        GoalType goal,
+                        double fTol,
+                        double pointTol,
+                        int maxEvaluations,
+                        PointValuePair expected) {
+        doTest(func,
+               startPoint,
+               boundaries,
+               goal,
+               fTol,
+               pointTol,
+               maxEvaluations,
+               0,
+               expected,
+               "");
+    }
+
+    /**
+     * @param func Function to optimize.
+     * @param startPoint Starting point.
+     * @param boundaries Upper / lower point limit.
+     * @param goal Minimization or maximization.
+     * @param fTol Tolerance relative error on the objective function.
+     * @param pointTol Tolerance for checking that the optimum is correct.
+     * @param maxEvaluations Maximum number of evaluations.
+     * @param additionalInterpolationPoints Number of interpolation to used
+     * in addition to the default (2 * dim + 1).
+     * @param expected Expected point / value.
+     */
+    private void doTest(MultivariateFunction func,
+                        double[] startPoint,
+                        double[][] boundaries,
+                        GoalType goal,
+                        double fTol,
+                        double pointTol,
+                        int maxEvaluations,
+                        int additionalInterpolationPoints,
+                        PointValuePair expected,
+                        String assertMsg) {
+
+//         System.out.println(func.getClass().getName() + " BEGIN"); // XXX
+
         int dim = startPoint.length;
-//        MultivariateRealOptimizer optim =
-//            new PowellOptimizer(1e-13, Math.ulp(1d));
-//        RealPointValuePair result = optim.optimize(100000, func, goal, startPoint);
-        BOBYQAOptimizerCustom optimizer = new BOBYQAOptimizerCustom(2*startPoint.length + 1);
-        InitialGuess initGuess = new InitialGuess(startPoint);
-        MaxIter maxIter = new MaxIter(30000);
-        MaxEval maxEval = new MaxEval(maxEvaluations);
-        SimpleBounds bounds = null;
-        if (boundaries == null) {
-            bounds = SimpleBounds.unbounded(startPoint.length);
-        } else {
-            bounds = new SimpleBounds(boundaries[0], boundaries[1]);
-        }
-        ObjectiveFunction objectiveFunction = new ObjectiveFunction(func);
-        PointValuePair optimal = optimizer.optimize(objectiveFunction, goal, bounds,initGuess, maxIter, maxEval);
-
-        System.out.println(func.getClass().getName() + " = " 
-        		+ optimizer.getEvaluations() + " f(");
-        for (double x: optimal.getPoint())  System.out.print(x + " ");
-        System.out.println(") = " +  optimal.getValue());
-
-        Assert.assertEquals(expected.getValue(),
-                optimal.getValue(), fTol);
+        final int numIterpolationPoints = 2 * dim + 1 + additionalInterpolationPoints;
+        BOBYQAOptimizerCustom optim = new BOBYQAOptimizerCustom(numIterpolationPoints);
+        PointValuePair result = boundaries == null ?
+            optim.optimize(new MaxEval(maxEvaluations),
+                           new ObjectiveFunction(func),
+                           goal,
+                           SimpleBounds.unbounded(dim),
+                           new InitialGuess(startPoint)) :
+            optim.optimize(new MaxEval(maxEvaluations),
+                           new ObjectiveFunction(func),
+                           goal,
+                           new InitialGuess(startPoint),
+                           new SimpleBounds(boundaries[0],
+                                            boundaries[1]));
+//        System.out.println(func.getClass().getName() + " = "
+//              + optim.getEvaluations() + " f(");
+//        for (double x: result.getPoint())  System.out.print(x + " ");
+//        System.out.println(") = " +  result.getValue());
+        Assert.assertEquals(assertMsg, expected.getValue(), result.getValue(), fTol);
         for (int i = 0; i < dim; i++) {
             Assert.assertEquals(expected.getPoint()[i],
-                    optimal.getPoint()[i], pointTol);
+                                result.getPoint()[i], pointTol);
         }
+
+//         System.out.println(func.getClass().getName() + " END"); // XXX
     }
 
     private static double[] point(int n, double value) {
@@ -293,19 +355,23 @@ public class BOBYQAOptimizerTest {
     private static double[][] boundaries(int dim,
             double lower, double upper) {
         double[][] boundaries = new double[2][dim];
-        for (int i = 0; i < dim; i++)
+        for (int i = 0; i < dim; i++) {
             boundaries[0][i] = lower;
-        for (int i = 0; i < dim; i++)
+        }
+        for (int i = 0; i < dim; i++) {
             boundaries[1][i] = upper;
+        }
         return boundaries;
     }
 
     private static class Sphere implements MultivariateFunction {
 
+        @Override
         public double value(double[] x) {
             double f = 0;
-            for (int i = 0; i < x.length; ++i)
+            for (int i = 0; i < x.length; ++i) {
                 f += x[i] * x[i];
+            }
             return f;
         }
     }
@@ -321,10 +387,12 @@ public class BOBYQAOptimizerTest {
             factor = axisratio * axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             double f = x[0] * x[0];
-            for (int i = 1; i < x.length; ++i)
+            for (int i = 1; i < x.length; ++i) {
                 f += factor * x[i] * x[i];
+            }
             return f;
         }
     }
@@ -340,10 +408,12 @@ public class BOBYQAOptimizerTest {
             factor = axisratio * axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             double f = factor * x[0] * x[0];
-            for (int i = 1; i < x.length; ++i)
+            for (int i = 1; i < x.length; ++i) {
                 f += x[i] * x[i];
+            }
             return f;
         }
     }
@@ -359,11 +429,13 @@ public class BOBYQAOptimizerTest {
             factor = axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             int end = x.length - 1;
             double f = x[0] * x[0] / factor + factor * x[end] * x[end];
-            for (int i = 1; i < end; ++i)
+            for (int i = 1; i < end; ++i) {
                 f += x[i] * x[i];
+            }
             return f;
         }
     }
@@ -380,10 +452,12 @@ public class BOBYQAOptimizerTest {
             factor = axisratio * axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             double f = 0;
-            for (int i = 0; i < x.length; ++i)
+            for (int i = 0; i < x.length; ++i) {
                 f += (i < x.length / 2 ? factor : 1) * x[i] * x[i];
+            }
             return f;
         }
     }
@@ -400,11 +474,13 @@ public class BOBYQAOptimizerTest {
             factor = axisratio * axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             double f = 0;
             x = B.Rotate(x);
-            for (int i = 0; i < x.length; ++i)
-                f += Math.pow(factor, i / (x.length - 1.)) * x[i] * x[i];
+            for (int i = 0; i < x.length; ++i) {
+                f += FastMath.pow(factor, i / (x.length - 1.)) * x[i] * x[i];
+            }
             return f;
         }
     }
@@ -421,33 +497,33 @@ public class BOBYQAOptimizerTest {
             factor = axisratio * axisratio;
         }
 
+        @Override
         public double value(double[] x) {
             double f = 0;
-            for (int i = 0; i < x.length; ++i)
-                f += Math.pow(factor, i / (x.length - 1.)) * x[i] * x[i];
+            for (int i = 0; i < x.length; ++i) {
+                f += FastMath.pow(factor, i / (x.length - 1.)) * x[i] * x[i];
+            }
             return f;
         }
     }
 
     private static class MinusElli implements MultivariateFunction {
-        private int fcount = 0;
+        private final Elli elli = new Elli();
+        @Override
         public double value(double[] x) {
-          double f = 1.0-(new Elli().value(x));
-//          System.out.print("" + (fcount++) + ") ");
-//          for (int i = 0; i < x.length; i++)
-//              System.out.print(x[i] +  " ");
-//          System.out.println(" = " + f);
-          return f;
-       }
+            return 1.0 - elli.value(x);
+        }
     }
 
     private static class DiffPow implements MultivariateFunction {
-        private int fcount = 0;
+//        private int fcount = 0;
+        @Override
         public double value(double[] x) {
             double f = 0;
-            for (int i = 0; i < x.length; ++i)
-                f += Math.pow(Math.abs(x[i]), 2. + 10 * (double) i
+            for (int i = 0; i < x.length; ++i) {
+                f += FastMath.pow(FastMath.abs(x[i]), 2. + 10 * (double) i
                         / (x.length - 1.));
+            }
 //            System.out.print("" + (fcount++) + ") ");
 //            for (int i = 0; i < x.length; i++)
 //                System.out.print(x[i] +  " ");
@@ -458,23 +534,22 @@ public class BOBYQAOptimizerTest {
 
     private static class SsDiffPow implements MultivariateFunction {
 
+        @Override
         public double value(double[] x) {
-            double f = Math.pow(new DiffPow().value(x), 0.25);
+            double f = FastMath.pow(new DiffPow().value(x), 0.25);
             return f;
         }
     }
 
     private static class Rosen implements MultivariateFunction {
-        private int fcount = 0;
+
+        @Override
         public double value(double[] x) {
             double f = 0;
-            for (int i = 0; i < x.length - 1; ++i)
+            for (int i = 0; i < x.length - 1; ++i) {
                 f += 1e2 * (x[i] * x[i] - x[i + 1]) * (x[i] * x[i] - x[i + 1])
                 + (x[i] - 1.) * (x[i] - 1.);
-//          System.out.print("" + (fcount++) + ") ");
-//          for (int i = 0; i < x.length; i++)
-//              System.out.print(x[i] +  " ");
-//          System.out.println(" = " + f);
+            }
             return f;
         }
     }
@@ -490,17 +565,18 @@ public class BOBYQAOptimizerTest {
             this(1);
         }
 
+        @Override
         public double value(double[] x) {
             double f = 0;
             double res2 = 0;
             double fac = 0;
             for (int i = 0; i < x.length; ++i) {
-                fac = Math.pow(axisratio, (i - 1.) / (x.length - 1.));
+                fac = FastMath.pow(axisratio, (i - 1.) / (x.length - 1.));
                 f += fac * fac * x[i] * x[i];
-                res2 += Math.cos(2. * Math.PI * fac * x[i]);
+                res2 += FastMath.cos(2. * FastMath.PI * fac * x[i]);
             }
-            f = (20. - 20. * Math.exp(-0.2 * Math.sqrt(f / x.length))
-                    + Math.exp(1.) - Math.exp(res2 / x.length));
+            f = (20. - 20. * FastMath.exp(-0.2 * FastMath.sqrt(f / x.length))
+                    + FastMath.exp(1.) - FastMath.exp(res2 / x.length));
             return f;
         }
     }
@@ -519,15 +595,17 @@ public class BOBYQAOptimizerTest {
             this.amplitude = amplitude;
         }
 
+        @Override
         public double value(double[] x) {
             double f = 0;
             double fac;
             for (int i = 0; i < x.length; ++i) {
-                fac = Math.pow(axisratio, (i - 1.) / (x.length - 1.));
-                if (i == 0 && x[i] < 0)
+                fac = FastMath.pow(axisratio, (i - 1.) / (x.length - 1.));
+                if (i == 0 && x[i] < 0) {
                     fac *= 1.;
+                }
                 f += fac * fac * x[i] * x[i] + amplitude
-                * (1. - Math.cos(2. * Math.PI * fac * x[i]));
+                * (1. - FastMath.cos(2. * FastMath.PI * fac * x[i]));
             }
             return f;
         }
@@ -542,15 +620,17 @@ public class BOBYQAOptimizerTest {
             double[] y = new double[x.length];
             for (int i = 0; i < x.length; ++i) {
                 y[i] = 0;
-                for (int j = 0; j < x.length; ++j)
+                for (int j = 0; j < x.length; ++j) {
                     y[i] += basis[i][j] * x[j];
+                }
             }
             return y;
         }
 
         void GenBasis(int DIM) {
-            if (basis != null ? basis.length == DIM : false)
+            if (basis != null ? basis.length == DIM : false) {
                 return;
+            }
 
             double sp;
             int i, j, k;
@@ -559,20 +639,25 @@ public class BOBYQAOptimizerTest {
             basis = new double[DIM][DIM];
             for (i = 0; i < DIM; ++i) {
                 /* sample components gaussian */
-                for (j = 0; j < DIM; ++j)
+                for (j = 0; j < DIM; ++j) {
                     basis[i][j] = rand.nextGaussian();
+                }
                 /* substract projection of previous vectors */
                 for (j = i - 1; j >= 0; --j) {
-                    for (sp = 0., k = 0; k < DIM; ++k)
+                    for (sp = 0., k = 0; k < DIM; ++k) {
                         sp += basis[i][k] * basis[j][k]; /* scalar product */
-                    for (k = 0; k < DIM; ++k)
+                    }
+                    for (k = 0; k < DIM; ++k) {
                         basis[i][k] -= sp * basis[j][k]; /* substract */
+                    }
                 }
                 /* normalize */
-                for (sp = 0., k = 0; k < DIM; ++k)
+                for (sp = 0., k = 0; k < DIM; ++k) {
                     sp += basis[i][k] * basis[i][k]; /* squared norm */
-                for (k = 0; k < DIM; ++k)
-                    basis[i][k] /= Math.sqrt(sp);
+                }
+                for (k = 0; k < DIM; ++k) {
+                    basis[i][k] /= FastMath.sqrt(sp);
+                }
             }
         }
     }
