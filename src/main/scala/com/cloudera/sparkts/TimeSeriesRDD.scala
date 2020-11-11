@@ -523,10 +523,10 @@ class TimeSeriesRDD[K](val index: DateTimeIndex, parent: RDD[(K, Vector)])
     *
     * @param spark: your current SparkSession instance.
     */
-  def saveAsParquetDataFrame(path: String, spark: SQLContext): Unit = {
+  def saveAsParquetDataFrame(path: String, spark: SparkSession): Unit = {
     // Write out contents
     import spark.implicits._
-    spark.setConf("spark.sql.parquet.compression.codec.", "snappy")
+    spark.sqlContext.setConf("spark.sql.parquet.compression.codec.", "snappy")
 
     // NOTE: toDF() doesn't work with generic types, need to force String type (which should
     // encompass most other types, even complex ones if toString() is implemented properly)
@@ -766,7 +766,7 @@ object TimeSeriesRDD {
   /**
     * Loads a TimeSeriesRDD from a parquet file and a date-time index.
     */
-  def timeSeriesRDDFromParquet(path: String, spark: SQLContext) :TimeSeriesRDD[String] = {
+  def timeSeriesRDDFromParquet(path: String, spark: SparkSession) = {
     val df = spark.read.parquet(path)
 
     import spark.implicits._
@@ -776,7 +776,7 @@ object TimeSeriesRDD {
     val textDateTime: String = spark.sparkContext.textFile(path + ".idx").collect().head
     val index = DateTimeIndex.fromString(textDateTime)
 
-    new TimeSeriesRDD[String](index, parent)
+    new TimeSeriesRDD[String](index, parent.rdd)
   }
 
   /**
