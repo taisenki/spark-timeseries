@@ -58,7 +58,7 @@ public class BOBYQAOptimizerCustom
     /** Default value for {@link #initialTrustRegionRadius}: {@value} . */
     public static final double DEFAULT_INITIAL_RADIUS = 10.0;
     /** Default value for {@link #stoppingTrustRegionRadius}: {@value} . */
-    public static final double DEFAULT_STOPPING_RADIUS = 1E-8;
+    public static final double DEFAULT_STOPPING_RADIUS = 1E-9;
     /** Default value for {@link #maxIter}: {@value} . */
     public static final long DEFAULT_MAX_ITER = 10000000;
     /** Constant 0. */
@@ -436,7 +436,7 @@ public class BOBYQAOptimizerCustom
             xoptsq += deltaOne * deltaOne;
         }
         double fsave = fAtInterpolationPoints.getEntry(0);
-        int kbase = 0;
+        final int kbase = 0;
 
         // Complete the settings that are required for the iterative procedure.
 
@@ -685,7 +685,7 @@ public class BOBYQAOptimizerCustom
                 case 190: {
                     printState(190); // XXX
                     nfsav = getEvaluations();
-                    kbase = trustRegionCenterInterpolationPointIndex;
+                    int ksave = trustRegionCenterInterpolationPointIndex;
 
                     rescue(lowerBound, upperBound, delta);
 
@@ -694,7 +694,7 @@ public class BOBYQAOptimizerCustom
                     // leads to a trust region iteration as does the branch to label 60.
 
                     xoptsq = ZERO;
-                    if (trustRegionCenterInterpolationPointIndex != kbase) {
+                    if (trustRegionCenterInterpolationPointIndex != ksave) {
                         for (int i = 0; i < n; i++) {
                             trustRegionCenterOffset.setEntry(i, interpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex, i));
                             // Computing 2nd power
