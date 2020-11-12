@@ -18,7 +18,6 @@ package com.cloudera.sparkts.api.java;
  */
 // CHECKSTYLE: stop all
 
-import org.apache.commons.math.MaxIterationsExceededException;
 import org.apache.commons.math3.exception.MathIllegalStateException;
 import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.exception.OutOfRangeException;

@@ -17,25 +17,15 @@
 
 package com.cloudera.sparkts.api.java;
 
-import java.util.Arrays;
-
-import org.apache.commons.math.analysis.MultivariateRealFunction;
-import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.MathIllegalStateException;
-import org.apache.commons.math3.exception.MultiDimensionMismatchException;
-import org.apache.commons.math3.exception.NoDataException;
-import org.apache.commons.math3.exception.OutOfRangeException;
-import org.apache.commons.math3.exception.util.LocalizedFormats;
-import org.apache.commons.math.optimization.GoalType;
-import org.apache.commons.math.optimization.MultivariateRealOptimizer;
-import org.apache.commons.math.optimization.RealPointValuePair;
 import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.nonlinear.scalar.MultivariateOptimizer;
 import org.apache.commons.math3.util.FastMath;
+
+import java.util.Arrays;
 
 /**
  * BOBYQA algorithm. This code is translated and adapted from the Fortran version
@@ -82,7 +72,7 @@ public class BOBYQAOptimizer
     /**
      * Number of objective variables/problem dimension.
      */
-    private int n;  
+    private int n;
     /**
      * number of interpolation conditions.
      */
@@ -98,7 +88,7 @@ public class BOBYQAOptimizer
     /**
      * final trust region radius..
      */
-    private double rhoend;    
+    private double rhoend;
 
     /** n + 1 */
     private int np;
@@ -119,7 +109,7 @@ public class BOBYQAOptimizer
     private double[] xu;
 
     // Working area
-    
+
     /**
      * holds a shift of origin that should reduce the contributions
      *       from rounding errors to values of the model and Lagrange functions.
@@ -178,7 +168,7 @@ public class BOBYQAOptimizer
      *       sl[i] <=. xopt[i] <= su[i], with appropriate equalities when
      *       xopt is on a constraint boundary.
      */
-    private double[] su; 
+    private double[] su;
     /**
      * is chosen by trsbox or altmov. Usually xbase+xnew is the
      *       vector of variables for the next call of the evaluation function. xnew also satisfies
@@ -358,7 +348,7 @@ public class BOBYQAOptimizer
      *     MAXFUN must be set to an upper bound on the number of calls of CALFUN.
      *     The array W will be used for working space. Its length must be at least
      *       (NPT+5)*(NPT+N)+3*N*(N+5)/2.
-     *       
+     *
      * @return
      */
     private double bobyqa() {
@@ -372,7 +362,7 @@ public class BOBYQAOptimizer
         // be treated separately during the calculation of BOBYQB. The partition
         // requires the first (NPT+2)*(NPT+N)+3*N*(N+5)/2 elements of W plus the
         // space that is taken by the last array in the argument list of BOBYQB.
-       
+
         xbase = new double[n];
         xpt = new double[n * npt];
         fval = new double[npt];
@@ -383,7 +373,7 @@ public class BOBYQAOptimizer
         bmat = new double[ndim * n];
         zmat = new double[npt * (npt - np)];
         sl = new double[n];
-        su = new double[n]; 
+        su = new double[n];
         xnew = new double[n];
         xalt = new double[n];
         d__ = new double[n];
@@ -398,7 +388,7 @@ public class BOBYQAOptimizer
         glag = new double[n];
         hcol = new double[npt];
         w = new double[2*ndim];
-        
+
         // Return if there is insufficient space between the bounds. Modify the
         // initial X if necessary in order to avoid conflicts between the bounds
         // and the construction of the first quadratic model. The lower and upper
@@ -441,7 +431,7 @@ public class BOBYQAOptimizer
 
         // Make the call of BOBYQB.
 
-        return bobyqb(maxfun);                     
+        return bobyqb(maxfun);
     } // bobyqa
 
     // ----------------------------------------------------------------------------------------
@@ -509,7 +499,7 @@ public class BOBYQAOptimizer
         for(;;) L100 : switch (state) {
         case 20: {
             if (kopt.value != kbase) {
-            	int ih = 0; 
+            	int ih = 0;
                 for (int j = 0; j < n; j++) {
                     for (int i = 0; i <= j; i++) {
                         if (i < j) {
@@ -795,7 +785,7 @@ public class BOBYQAOptimizer
             }
             beta = dx * dx + dsq.value * (xoptsq + dx + dx + HALF * dsq.value) + beta - bsum;
             vlag[kopt.value] += ONE;
-            
+
             // If NTRITS is ZERO, the denominator may be increased by replacing
             // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
             // rounding errors have damaged the chosen denominator.
@@ -908,15 +898,15 @@ public class BOBYQAOptimizer
             f = computeObjectiveValue(x);
             if (!isMinimize)
                 f = -f;
-            
+
 //        	if (nf.value >= 24)
 //        		nf.value = nf.value;
-            
+
             if (ntrits == -1) {
                 fsave = f;
                 state = 720; break;
             }
-            
+
             // Use the quadratic model to predict the change in F due to the step D,
             //   and set DIFF to the error of this prediction.
 
@@ -1371,7 +1361,7 @@ public class BOBYQAOptimizer
         int isbd = 0;
         int ilbd = 0;
         int iubd = 0;
-        
+
         for (int k = 0; k < npt; k++) {
             hcol[k] = ZERO;
         }
@@ -1938,7 +1928,7 @@ public class BOBYQAOptimizer
         double distsq;
         double beta = 0;
         double denom = 0;
-        
+
         for (int k = 0; k < npt; k++) {
             distsq = ZERO;
             for (int j = 0; j < n; j++) {
@@ -2462,7 +2452,7 @@ public class BOBYQAOptimizer
         int itermax = 0;
         int itcsav = 0;
         crvmin.value = ONEMIN;
-        
+
         // Set the next search direction of the conjugate gradient method. It is
         // the steepest descent direction initially and when the iterations are
         // restarted because a variable has just been fixed by a bound, and of
